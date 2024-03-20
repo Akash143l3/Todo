@@ -138,7 +138,7 @@ export default async function Tasks() {
     <div className="flex gap-2">
       <Dialog>
         <DialogTrigger>
-          <Button variant="outline">Update</Button>
+          Update
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>

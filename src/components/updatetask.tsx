@@ -99,7 +99,7 @@ export function UpdateTaskForm({ task }: UpdateTaskFormProps) {
             type="radio"
             id="task"
             name="type"
-            value="task"
+            value="tasks"
             defaultChecked={task.type === TaskType.Tasks}
             required
           />

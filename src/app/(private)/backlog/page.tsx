@@ -55,7 +55,7 @@ export default async function Tasks() {
   return (
     <div className="flex gap-8 min-h-screen flex-col items-center px-8 py-10 overflow-y-auto">
       <Dialog>
-      <div className="flex justify-between"><h1>Create Backlog</h1><DialogTrigger >Add Backlog</DialogTrigger></div>
+      <DialogTrigger >Add Backlog</DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adding BackLog</DialogTitle>
