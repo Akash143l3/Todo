@@ -22,5 +22,5 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updatedAt").defaultNow(),
   userName: text("userName").notNull(),
   status: text("status").notNull().default(TodoStatus.Pending),
-  type: text("type").notNull().default(TaskType.Tasks),
+  type: text("type").notNull().default(TaskType.Backlog),
 });

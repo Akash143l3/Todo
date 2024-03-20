@@ -24,10 +24,9 @@ export default async function Navbar() {
   <DropdownMenuContent>
     <DropdownMenuLabel>DashBoard</DropdownMenuLabel>
     <DropdownMenuSeparator />
-    <DropdownMenuItem><Link href={"/dashboard"}>Tasks</Link></DropdownMenuItem>
-    <DropdownMenuItem>Billing</DropdownMenuItem>
-    <DropdownMenuItem>Team</DropdownMenuItem>
-    <DropdownMenuItem>Subscription</DropdownMenuItem>
+    <DropdownMenuItem><Link href={"/task"}>Tasks</Link></DropdownMenuItem>
+    <DropdownMenuItem><Link href={"/backlog"}>Backlog</Link></DropdownMenuItem>
+   
   </DropdownMenuContent>
 </DropdownMenu>
 </div><div> {userId ? (
