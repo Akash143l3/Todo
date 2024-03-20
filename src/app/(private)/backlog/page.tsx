@@ -16,6 +16,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { UpdateTaskForm } from "@/components/updatetask";
+import DeleteTask from "@/components/deletetask";
 
 
 export default async function Tasks() {
@@ -46,48 +48,14 @@ export default async function Tasks() {
     formData.set("content", "");
   }
 
-  async function updateTask(id: string, formData: FormData) {
-    const content = formData.get("content")?.toString();
-    const status = formData.get("status")?.toString() as TodoStatus;
-    const type = formData.get("type") as TaskType;
+ 
 
-    if (!content || !status || !type) {
-      return alert("Please fill out all fields");
-    }
-
-    const response = await fetch(`/api/tasks/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ content, status, type }),
-    });
-
-    if (response.ok) {
-      revalidatePath("/");
-    } else {
-      const { message } = await response.json();
-      alert(message);
-    }
-  }
-
-  async function deleteTask(id: string) {
-    const response = await fetch(`/api/tasks/${id}`, {
-      method: "DELETE",
-    });
-
-    if (response.ok) {
-      revalidatePath("/");
-    } else {
-      const { message } = await response.json();
-      alert(message);
-    }
-  }
+  
 
   return (
     <div className="flex gap-8 min-h-screen flex-col items-center px-8 py-10 overflow-y-auto">
       <Dialog>
-        <DialogTrigger>Add Backlog</DialogTrigger>
+      <div className="flex justify-between"><h1>Create Backlog</h1><DialogTrigger >Add Backlog</DialogTrigger></div>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adding BackLog</DialogTitle>
@@ -153,13 +121,13 @@ export default async function Tasks() {
     <div className="flex gap-2">
       <Dialog>
         <DialogTrigger>
-          <Button variant="outline">Update</Button>
+          Update
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Task</DialogTitle>
             <DialogDescription>
-              {/* {task.type === TaskType.Tasks && (
+              
                 <UpdateTaskForm
                   task={{
                     id: task.id,
@@ -167,21 +135,15 @@ export default async function Tasks() {
                     status: task.status as TodoStatus,
                     type: task.type as TaskType,
                   }}
-                  onSubmit={(formData) => updateTask(task.id, formData)}
+                 
                 />
-              )} */}
+              
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
-      {task.type === TaskType.Tasks && (
-        <Button
-          variant="destructive"
-          // onClick={() => deleteTask(task.id)}
-        >
-          Delete
-        </Button>
-      )}
+      
+        <DeleteTask task={{id: task.id}} />
     </div>
   </div>
 ))}

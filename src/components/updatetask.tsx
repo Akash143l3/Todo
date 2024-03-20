@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { TodoStatus, TaskType } from "@/db/schema";
+import { revalidatePath } from "next/cache";
+import { useRouter } from "next/navigation";
 
 
 
@@ -14,17 +16,45 @@ interface UpdateTaskFormProps {
       status: TodoStatus;
       type: TaskType;
     };
-    onSubmit: (formData: FormData) => Promise<void>;
+    
   }
   
-export function UpdateTaskForm({ task, onSubmit }: UpdateTaskFormProps) {
+export function UpdateTaskForm({ task }: UpdateTaskFormProps) {
+
+    const router =useRouter()
+
+    async function updateTask(id: string, formData: FormData) {
+        const content = formData.get("content")?.toString();
+        const status = formData.get("status")?.toString() as TodoStatus;
+        const type = formData.get("type") as TaskType;
+    
+        if (!content || !status || !type) {
+          return alert("Please fill out all fields");
+        }
+    
+        const response = await fetch(`/api/task/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content, status, type }),
+        });
+    
+        if (response.ok) {
+          router.refresh()
+        } else {
+          const { message } = await response.json();
+          alert(message);
+        }
+      }
     
     return (
       <form
         onSubmit={(e) => {
           e.preventDefault();
           const formData = new FormData(e.currentTarget);
-          onSubmit(formData);
+          updateTask(task.id, formData)
+        
         }}
         className="flex flex-col gap-2"
       >

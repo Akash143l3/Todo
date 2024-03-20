@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UpdateTaskForm } from "@/components/updatetask";
+import DeleteTask from "@/components/deletetask";
 
 export default async function Tasks() {
   const user = await currentUser();
@@ -181,29 +182,22 @@ export default async function Tasks() {
           <DialogHeader>
             <DialogTitle>Update Task</DialogTitle>
             <DialogDescription>
-              {/* {task.type === TaskType.Tasks && (
-                <UpdateTaskForm
+            <UpdateTaskForm
                   task={{
                     id: task.id,
                     content: task.content,
                     status: task.status as TodoStatus,
                     type: task.type as TaskType,
                   }}
-                  onSubmit={(formData) => updateTask(task.id, formData)}
+                 
                 />
-              )} */}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
-      {task.type === TaskType.Tasks && (
-        <Button
-          variant="destructive"
-          // onClick={() => deleteTask(task.id)}
-        >
-          Delete
-        </Button>
-      )}
+      
+        <Button><DeleteTask task={{id: task.id}}/></Button>
+    
     </div>
   </div>
 ))}
