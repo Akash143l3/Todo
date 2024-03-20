@@ -196,7 +196,7 @@ export default async function Tasks() {
         </DialogContent>
       </Dialog>
       
-        <Button><DeleteTask task={{id: task.id}}/></Button>
+        <DeleteTask task={{id: task.id}}/>
     
     </div>
   </div>
