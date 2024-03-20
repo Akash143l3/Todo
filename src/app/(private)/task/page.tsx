@@ -47,44 +47,6 @@ export default async function Tasks() {
     formData.set("content", "");
   }
 
-  async function updateTask(id: string, formData: FormData) {
-    const content = formData.get("content")?.toString();
-    const status = formData.get("status")?.toString() as TodoStatus;
-    const type = formData.get("type") as TaskType;
-
-    if (!content || !status || !type) {
-      return alert("Please fill out all fields");
-    }
-
-    const response = await fetch(`/api/tasks/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ content, status, type }),
-    });
-
-    if (response.ok) {
-      revalidatePath("/");
-    } else {
-      const { message } = await response.json();
-      alert(message);
-    }
-  }
-
-  async function deleteTask(id: string) {
-    const response = await fetch(`/api/tasks/${id}`, {
-      method: "DELETE",
-    });
-
-    if (response.ok) {
-      revalidatePath("/");
-    } else {
-      const { message } = await response.json();
-      alert(message);
-    }
-  }
-
   return (
     <div className="flex gap-8 min-h-screen flex-col items-center px-8 py-10 overflow-y-auto">
       <Dialog>
@@ -161,7 +123,7 @@ export default async function Tasks() {
       </Dialog>
 
       <div className="w-full max-w-4xl">
-      {allTasks.filter((task) => task.type === TaskType.Tasks).map((task) => (
+      {allTasks.filter((task) => task.type === TaskType.Tasks && task.userId===user?.id).map((task) => (
         
   <div
     key={task.id}

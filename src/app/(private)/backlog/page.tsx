@@ -106,7 +106,7 @@ export default async function Tasks() {
       </Dialog>
 
       <div className="w-full max-w-4xl">
-      {allTasks.filter((task) => task.type === TaskType.Backlog).map((task) => (
+      {allTasks.filter((task) => task.type === TaskType.Backlog && task.userId===user?.id).map((task) => (
         
   <div
     key={task.id}
