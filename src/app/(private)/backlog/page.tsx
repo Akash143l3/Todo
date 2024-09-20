@@ -6,8 +6,7 @@ import { tasks, TodoStatus, TaskType } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs";
 import { desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-
-
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import {
   Dialog,
   DialogContent,
@@ -19,8 +18,7 @@ import {
 import { UpdateTaskForm } from "@/components/updatetask";
 import DeleteTask from "@/components/deletetask";
 
-
-export default async function Tasks() {
+export default async function BackLog() {
   const user = await currentUser();
   const allTasks = await db.select().from(tasks).orderBy(desc(tasks.createdAt));
 
@@ -48,14 +46,10 @@ export default async function Tasks() {
     formData.set("content", "");
   }
 
- 
-
-  
-
   return (
     <div className="flex gap-8 min-h-screen flex-col items-center px-8 py-10 overflow-y-auto">
       <Dialog>
-      <DialogTrigger >Add Backlog</DialogTrigger>
+        <DialogTrigger>Add Backlog</DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adding BackLog</DialogTitle>
@@ -92,7 +86,6 @@ export default async function Tasks() {
                       ))}
                     </select>
                   </div>
-                 
                   <div className="flex justify-end">
                     <Button type="submit" size={"lg"}>
                       Add Backlog
@@ -105,50 +98,145 @@ export default async function Tasks() {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full max-w-4xl">
-      {allTasks.filter((task) => task.type === TaskType.Backlog && task.userId===user?.id).map((task) => (
-        
-  <div
-    key={task.id}
-    className="flex items-center justify-between p-4 border rounded-md mb-4"
-  >
-    <div>
-      <h3 className="font-medium">{task.content}</h3>
-      <p className="text-sm">
-        Status: {task.status} | Type: {task.type}
-      </p>
-    </div>
-    <div className="flex gap-2">
-      <Dialog>
-        <DialogTrigger>
-          Update
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Task</DialogTitle>
-            <DialogDescription>
-              
-                <UpdateTaskForm
-                  task={{
-                    id: task.id,
-                    content: task.content,
-                    status: task.status as TodoStatus,
-                    type: task.type as TaskType,
-                  }}
-                 
-                />
-              
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-      
-        <DeleteTask task={{id: task.id}} />
-    </div>
-  </div>
-))}
+      <div className="w-full max-w-4xl ">
+          <div className="" >
 
+
+            <h2>Pending</h2>
+            {allTasks
+              .filter(
+                (task) =>
+                  task.type === TaskType.Backlog &&
+                  task.status === TodoStatus.Pending &&
+                  task.userId === user?.id
+              )
+              .map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between p-4 border rounded-md mb-4 bg-orange-200"
+                >
+                  <div>
+                    <h3 className="font-medium">{task.content}</h3>
+                    <p className="text-sm">
+                      Status: {task.status} | Type: {task.type}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Dialog>
+                      <DialogTrigger>Update</DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Update Task</DialogTitle>
+                          <DialogDescription>
+                            <UpdateTaskForm
+                              task={{
+                                id: task.id,
+                                content: task.content,
+                                status: task.status as TodoStatus,
+                                type: task.type as TaskType,
+                              }}
+                            />
+                          </DialogDescription>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
+                    <DeleteTask task={{ id: task.id }} />
+                  </div>
+                </div>
+              ))}
+          </div>
+        
+        <div>
+          <h2>In Progress</h2>
+          {allTasks
+            .filter(
+              (task) =>
+                task.type === TaskType.Backlog &&
+                task.status === TodoStatus.InProgress &&
+                task.userId === user?.id
+            )
+            .map((task) => (
+              <div
+                key={task.id}
+                className="flex items-center justify-between p-4 border rounded-md mb-4 bg-yellow-300"
+              >
+                <div>
+                  <h3 className="font-medium">{task.content}</h3>
+                  <p className="text-sm">
+                    Status: {task.status} | Type: {task.type}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger>Update</DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Update Task</DialogTitle>
+                        <DialogDescription>
+                          <UpdateTaskForm
+                            task={{
+                              id: task.id,
+                              content: task.content,
+                              status: task.status as TodoStatus,
+                              type: task.type as TaskType,
+                            }}
+                          />
+                        </DialogDescription>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
+                  <DeleteTask task={{ id: task.id }} />
+                </div>
+              </div>
+            ))}
+        </div>
+
+        <div>
+          <h2>Done</h2>
+          {allTasks
+            .filter(
+              (task) =>
+                task.type === TaskType.Backlog &&
+                task.status === TodoStatus.Done &&
+                task.userId === user?.id
+            )
+            .map((task) => (
+              <div
+                key={task.id}
+                className="flex items-center justify-between p-4 border rounded-md mb-4 bg-red-400"
+              >
+                <div>
+                  <h3 className="font-medium">{task.content}</h3>
+                  <p className="text-sm">
+                    Status: {task.status} | Type: {task.type}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger>Update</DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Update Task</DialogTitle>
+                        <DialogDescription>
+                          <UpdateTaskForm
+                            task={{
+                              id: task.id,
+                              content: task.content,
+                              status: task.status as TodoStatus,
+                              type: task.type as TaskType,
+                            }}
+                          />
+                        </DialogDescription>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
+                  <DeleteTask task={{ id: task.id }} />
+                </div>
+              </div>
+            ))}
+        </div>
       </div>
     </div>
   );
-}
+};
+

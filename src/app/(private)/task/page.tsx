@@ -122,17 +122,21 @@ export default async function Tasks() {
         </DialogContent>
       </Dialog>
 
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-4xl grid grid-cols-3 gap-3">
       {allTasks.filter((task) => task.type === TaskType.Tasks && task.userId===user?.id).map((task) => (
         
   <div
     key={task.id}
-    className="flex items-center justify-between p-4 border rounded-md mb-4"
+    className={`flex items-center justify-between p-4 border rounded-md mb-4 ${
+      task.status === TodoStatus.Pending ? 'bg-orange-200' :
+      task.status === TodoStatus.InProgress ? 'bg-yellow-200' :
+      task.status === TodoStatus.Done ? 'bg-red-200' : ''
+    }`}
   >
     <div>
       <h3 className="font-medium">{task.content}</h3>
       <p className="text-sm">
-        Status: {task.status} | Type: {task.type}
+        Status: {task.status} <br/> Type: {task.type}
       </p>
     </div>
     <div className="flex gap-2">
