@@ -52,15 +52,24 @@ export default async function Tasks() {
       }
     : null;
 
-  // Separate tasks by status
+  // Filter tasks by status and type (only show tasks with type "Tasks")
   const pendingTasks = allTasks.filter(
-    (task) => task.status === TodoStatus.Pending && task.userId === user?.id
+    (task) =>
+      task.status === TodoStatus.Pending &&
+      task.userId === user?.id &&
+      task.type === TaskType.Tasks
   );
   const inProgressTasks = allTasks.filter(
-    (task) => task.status === TodoStatus.InProgress && task.userId === user?.id
+    (task) =>
+      task.status === TodoStatus.InProgress &&
+      task.userId === user?.id &&
+      task.type === TaskType.Tasks
   );
   const doneTasks = allTasks.filter(
-    (task) => task.status === TodoStatus.Done && task.userId === user?.id
+    (task) =>
+      task.status === TodoStatus.Done &&
+      task.userId === user?.id &&
+      task.type === TaskType.Tasks
   );
 
   return (
@@ -83,10 +92,8 @@ export default async function Tasks() {
                   <h3 className="font-semibold text-lg text-gray-800">
                     {task.content}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Status: <span className="font-medium">{task.status}</span>{" "}
-                    <br />
-                    Type: <span className="font-medium">{task.type}</span>
+                  <p className="text-sm">
+                    Status: {task.status} | Type: {task.type}
                   </p>
                 </div>
                 <div className="flex justify-between mt-4">
@@ -121,10 +128,8 @@ export default async function Tasks() {
                   <h3 className="font-semibold text-lg text-gray-800">
                     {task.content}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Status: <span className="font-medium">{task.status}</span>{" "}
-                    <br />
-                    Type: <span className="font-medium">{task.type}</span>
+                  <p className="text-sm">
+                    Status: {task.status} | Type: {task.type}
                   </p>
                 </div>
                 <div className="flex justify-between mt-4">
@@ -159,10 +164,8 @@ export default async function Tasks() {
                   <h3 className="font-semibold text-lg text-gray-800">
                     {task.content}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Status: <span className="font-medium">{task.status}</span>{" "}
-                    <br />
-                    Type: <span className="font-medium">{task.type}</span>
+                  <p className="text-sm">
+                    Status: {task.status} | Type: {task.type}
                   </p>
                 </div>
                 <div className="flex justify-between mt-4">
