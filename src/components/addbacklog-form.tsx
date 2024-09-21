@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { TodoStatus, TaskType } from "@/db/schema";
+import { TodoStatus } from "@/db/schema";
 import {
   Dialog,
   DialogContent,
@@ -13,23 +13,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useState } from "react";
 
-export interface Task {
+interface User {
   id: string;
-  content: string;
-  status: TodoStatus;
-  type: TaskType;
+  firstName: string | null;
+  lastName: string | null;
+  imageUrl: string | null;
 }
 
-interface UpdateTaskFormProps {
-  task: Task;
-  onUpdate: (taskId: string, formData: FormData) => Promise<void>;
+interface AddBacklogFormProps {
+  onSubmit: (formData: FormData) => Promise<void>;
+  user: User | null;
 }
 
-export default function UpdateTaskForm({
-  task,
-  onUpdate,
-}: UpdateTaskFormProps) {
+export default function AddBacklogForm({
+  onSubmit,
+  user,
+}: AddBacklogFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,10 +38,10 @@ export default function UpdateTaskForm({
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await onUpdate(task.id, new FormData(e.currentTarget));
+      await onSubmit(new FormData(e.currentTarget));
       setIsOpen(false);
     } catch (error) {
-      console.error("Error updating task:", error);
+      console.error("Error submitting form:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,19 +50,35 @@ export default function UpdateTaskForm({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Update</Button>
+        <Button onClick={() => setIsOpen(true)}>Add Backlog</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Update Task</DialogTitle>
+          <DialogTitle>Adding Backlog Task</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <DialogDescription>
             <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <Avatar>
+                  <AvatarImage
+                    src={user?.imageUrl || ""}
+                    alt={user?.firstName || ""}
+                  />
+                  <AvatarFallback>
+                    {user?.firstName?.[0]}
+                    {user?.lastName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium leading-none">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                </div>
+              </div>
               <Textarea
-                placeholder="Update your task here."
+                placeholder="Type your backlog task here."
                 name="content"
-                defaultValue={task.content}
                 required
               />
               <div className="flex gap-2 items-center mt-2">
@@ -72,7 +89,6 @@ export default function UpdateTaskForm({
                   name="status"
                   id="status"
                   className="border rounded-md px-2 py-1"
-                  defaultValue={task.status}
                 >
                   {Object.values(TodoStatus).map((status) => (
                     <option key={status} value={status}>
@@ -81,36 +97,11 @@ export default function UpdateTaskForm({
                   ))}
                 </select>
               </div>
-              <div className="flex gap-2 items-center mt-2">
-                <label className="font-medium text-base">Type:</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    id="backlog"
-                    name="type"
-                    value="backlog"
-                    defaultChecked={task.type === TaskType.Backlog}
-                    required
-                  />
-                  <label htmlFor="backlog">Backlog</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    id="task"
-                    name="type"
-                    value="task"
-                    defaultChecked={task.type === TaskType.Tasks}
-                    required
-                  />
-                  <label htmlFor="task">Task</label>
-                </div>
-              </div>
             </div>
           </DialogDescription>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Updating..." : "Update Task"}
+              {isSubmitting ? "Adding..." : "Add Backlog"}
             </Button>
           </DialogFooter>
         </form>
