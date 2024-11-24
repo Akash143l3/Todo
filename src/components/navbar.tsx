@@ -9,7 +9,9 @@ export default async function Navbar() {
 
   return (
     <div className="bg-primary  text-secondary flex justify-between items-center h-16 px-6">
-      <div className="text-2xl font-bold">TODO</div>
+      <Link href="/">
+        <div className="text-2xl font-bold">TODO</div>
+      </Link>
       <div className="flex space-x-8">
         <Navigation />
         <div>
