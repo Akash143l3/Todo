@@ -7,14 +7,6 @@ import { currentUser } from "@clerk/nextjs";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import UpdateTaskForm from "@/components/updatetask";
 import DeleteTask from "@/components/deletetask";
 import AddBacklogForm from "@/components/addbacklog-form";
