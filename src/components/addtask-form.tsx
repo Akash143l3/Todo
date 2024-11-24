@@ -38,6 +38,9 @@ export default function AddTaskForm({ onSubmit, user }: AddTaskFormProps) {
     try {
       await onSubmit(new FormData(e.currentTarget));
       setIsOpen(false);
+
+      // Refresh the page after successful form submission
+      window.location.reload();
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {

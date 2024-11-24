@@ -1,7 +1,6 @@
 "use client";
-
 import React, { useState, useTransition } from "react";
-import { Search, MoreVertical, Plus, Loader2 } from "lucide-react";
+import { Search, MoreVertical, Loader2, Clock } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -15,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -25,21 +23,59 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { TaskForm } from "./TaskForm";
 
-interface Task {
+export interface Task {
   id: string;
   content: string;
   status: string;
   type: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  userId: string;
+  userName: string;
+}
+
+export class TaskQueue {
+  private items: Task[];
+
+  constructor() {
+    this.items = [];
+  }
+
+  enqueue(task: Task) {
+    this.items.push(task);
+  }
+
+  dequeue(): Task | undefined {
+    return this.items.shift();
+  }
+
+  getAllTasks(): Task[] {
+    return [...this.items];
+  }
+
+  peek(): Task | undefined {
+    return this.items[0];
+  }
+
+  isEmpty(): boolean {
+    return this.items.length === 0;
+  }
+
+  size(): number {
+    return this.items.length;
+  }
+
+  removeById(taskId: string) {
+    this.items = this.items.filter((task) => task.id !== taskId);
+  }
+
+  updateTask(taskId: string, updatedTask: Partial<Task>) {
+    this.items = this.items.map((task) =>
+      task.id === taskId ? { ...task, ...updatedTask } : task
+    );
+  }
 }
 
 interface TaskTableProps {
@@ -49,137 +85,48 @@ interface TaskTableProps {
   deleteAction: (taskId: string) => Promise<void>;
 }
 
-const TaskForm = ({
-  task,
-  action,
-  isEdit = false,
-  onClose,
-}: {
-  task?: Task;
-  action: (formData: FormData) => Promise<void>;
-  isEdit?: boolean;
-  onClose: () => void;
-}) => {
-  const [isPending, startTransition] = useTransition();
-
-  const handleSubmit = async (formData: FormData) => {
-    startTransition(async () => {
-      await action(formData);
-      window.location.reload();
-      onClose();
-    });
-  };
-
-  return (
-    <form
-      action={(formData) => {
-        startTransition(async () => {
-          onClose();
-          handleSubmit(formData);
-        });
-      }}
-      className="space-y-4"
-    >
-      <div className="space-y-2">
-        <Label htmlFor="content">Task Content</Label>
-        <Input
-          id="content"
-          name="content"
-          defaultValue={task?.content}
-          placeholder="Enter task content..."
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select name="status" defaultValue={task?.status || "PENDING"}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-            <SelectItem value="DONE">Done</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="type">Type</Label>
-        <Select name="type" defaultValue={task?.type || "TASKS"}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="TASKS">Tasks</SelectItem>
-            <SelectItem value="BACKLOG">Backlog</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving..." : isEdit ? "Update Task" : "Add Task"}
-        </Button>
-      </div>
-    </form>
-  );
-};
-
 const TaskTable: React.FC<TaskTableProps> = ({
-  tasks,
+  tasks: initialTasks,
   addAction,
   updateAction,
   deleteAction,
 }) => {
+  // Initialize TaskQueue
+  const [taskQueue] = useState(() => {
+    const queue = new TaskQueue();
+    initialTasks.forEach((task) => queue.enqueue(task));
+    return queue;
+  });
+
+  const [tasks, setTasks] = useState<Task[]>(taskQueue.getAllTasks());
   const [filterText, setFilterText] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [showQueueInfo, setShowQueueInfo] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const filteredTasks = tasks.filter(
     (task) =>
       (task.content.toLowerCase().includes(filterText.toLowerCase()) ||
         task.id.toLowerCase().includes(filterText.toLowerCase())) &&
-      (statusFilter === null || task.status === statusFilter)
+      !selectedTasks.has(task.id)
   );
-
-  const handleTaskSelect = (taskId: string) => {
-    const newSelected = new Set(selectedTasks);
-    if (newSelected.has(taskId)) {
-      newSelected.delete(taskId);
-    } else {
-      newSelected.add(taskId);
-    }
-    setSelectedTasks(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedTasks.size === filteredTasks.length) {
-      setSelectedTasks(new Set());
-    } else {
-      setSelectedTasks(new Set(filteredTasks.map((task) => task.id)));
-    }
-  };
-
-  const handleEditClick = (task: Task) => {
-    setEditingTask(task);
-    setIsEditDialogOpen(true);
-  };
 
   const handleDelete = async (taskId: string) => {
     setDeletingTaskId(taskId);
     startTransition(async () => {
       try {
         await deleteAction(taskId);
+        taskQueue.removeById(taskId);
+        setTasks(taskQueue.getAllTasks());
+        setSelectedTasks((prev) => {
+          const newSelectedTasks = new Set(prev);
+          newSelectedTasks.delete(taskId);
+          return newSelectedTasks;
+        });
       } catch (error) {
         console.error("Error deleting task:", error);
       } finally {
@@ -188,86 +135,89 @@ const TaskTable: React.FC<TaskTableProps> = ({
     });
   };
 
+  const handleEditClick = (task: Task) => {
+    setEditingTask(task);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateTask = async (taskId: string, formData: FormData) => {
+    await updateAction(taskId, formData);
+    const updatedTask = {
+      content: formData.get("content") as string,
+      status: formData.get("status") as string,
+      type: formData.get("type") as string,
+    };
+    taskQueue.updateTask(taskId, updatedTask);
+    setTasks(taskQueue.getAllTasks());
+  };
+
+  const handleAddTask = async (formData: FormData) => {
+    await addAction(formData);
+    const newTask: Task = {
+      id: Math.random().toString(36).substr(2, 9),
+      content: formData.get("content") as string,
+      status: formData.get("status") as string,
+      type: formData.get("type") as string,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: "default-user", // Replace with actual user ID from your auth system
+      userName: "Default User", // Replace with actual user name from your auth system
+    };
+    taskQueue.enqueue(newTask);
+    setTasks(taskQueue.getAllTasks());
+  };
+
   return (
     <div className="w-full mx-auto p-6">
-      <div className="space-y-4">
-        {/* Header Section */}
+      <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Filter tasks.."
+              placeholder="Filter tasks..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               className="pl-10"
             />
           </div>
-          {/* Add Task Button */}
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="default" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Task
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Task</DialogTitle>
-              </DialogHeader>
-              <TaskForm
-                action={addAction}
-                onClose={() => setIsAddDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
+          <Button
+            variant="outline"
+            onClick={() => setShowQueueInfo(!showQueueInfo)}
+            className="flex items-center gap-2"
+          >
+            <Clock className="h-4 w-4" />
+            Queue Info
+          </Button>
+          <Button onClick={() => setIsAddDialogOpen(true)}>Add New Task</Button>
         </div>
 
-        {/* Edit Task Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Task</DialogTitle>
-            </DialogHeader>
-            {editingTask && (
-              <TaskForm
-                task={editingTask}
-                action={(formData) => updateAction(editingTask.id, formData)}
-                isEdit
-                onClose={() => setIsEditDialogOpen(false)}
-              />
+        {showQueueInfo && (
+          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+            <p>Tasks in Queue: {taskQueue.size()}</p>
+            {taskQueue.peek() && (
+              <p>
+                Next Task: TASK-{taskQueue.peek()?.id.slice(0, 4)} -{" "}
+                {taskQueue.peek()?.content}
+              </p>
             )}
-          </DialogContent>
-        </Dialog>
+            <p>Queue Status: {taskQueue.isEmpty() ? "Empty" : "Has Tasks"}</p>
+          </div>
+        )}
 
-        {/* Table Section */}
         <div className="border rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={
-                      selectedTasks.size === filteredTasks.length &&
-                      filteredTasks.length > 0
-                    }
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
-                <TableHead>Task</TableHead>
-                <TableHead>Title</TableHead>
+                <TableHead>Task ID</TableHead>
+                <TableHead>Content</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Created At</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTasks.map((task) => (
                 <TableRow key={task.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedTasks.has(task.id)}
-                      onCheckedChange={() => handleTaskSelect(task.id)}
-                    />
-                  </TableCell>
                   <TableCell className="font-medium">
                     TASK-{task.id.slice(0, 4)}
                   </TableCell>
@@ -284,6 +234,9 @@ const TaskTable: React.FC<TaskTableProps> = ({
                     >
                       {task.status === "IN_PROGRESS" ? "Progress" : task.status}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    {task.createdAt?.toLocaleDateString() ?? "N/A"}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -325,6 +278,53 @@ const TaskTable: React.FC<TaskTableProps> = ({
             </TableBody>
           </Table>
         </div>
+
+        <Dialog
+          open={isEditDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsEditDialogOpen(false);
+              setEditingTask(null);
+              window.location.reload();
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Task</DialogTitle>
+            </DialogHeader>
+            {editingTask && (
+              <TaskForm
+                task={{
+                  ...editingTask,
+                  createdAt: editingTask.createdAt ?? new Date(),
+                }}
+                action={(formData) =>
+                  handleUpdateTask(editingTask.id, formData)
+                }
+                isEdit
+                onClose={() => setIsEditDialogOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) setIsAddDialogOpen(false);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Task</DialogTitle>
+            </DialogHeader>
+            <TaskForm
+              action={handleAddTask}
+              onClose={() => setIsAddDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

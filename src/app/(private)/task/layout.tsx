@@ -1,12 +1,22 @@
-import Navbar from "@/components/navbar";
+import { createPost } from "@/components/addtask";
+import AddTaskForm from "@/components/addtask-form";
 import TaskTabsClient from "@/components/task-tab";
-import { Button } from "@/components/ui/button";
+import { currentUser } from "@clerk/nextjs";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await currentUser();
+  const plainUser = user
+    ? {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        imageUrl: user.imageUrl,
+      }
+    : null;
   return (
     <div className="flex flex-col gap-8 px-16 py-10">
       <div className="flex justify-between w-full">
@@ -16,7 +26,8 @@ export default function RootLayout({
             Comprehensive Task Breakdown
           </p>
         </div>
-        <Button> Add Task </Button>
+
+        <AddTaskForm onSubmit={createPost} user={plainUser} />
       </div>
       <div className="w-[600px]">
         <TaskTabsClient />

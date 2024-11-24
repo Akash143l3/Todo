@@ -1,6 +1,3 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { db } from "@/db";
 import { tasks, TodoStatus, TaskType } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs";
