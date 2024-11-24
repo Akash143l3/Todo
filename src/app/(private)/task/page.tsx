@@ -6,7 +6,6 @@ import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import TaskTable from "@/components/TaskTable";
 import { redirect } from "next/navigation";
-import AddTaskForm from "@/components/addtask-form";
 
 async function deleteTask(taskId: string) {
   "use server";

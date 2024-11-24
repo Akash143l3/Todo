@@ -44,7 +44,10 @@ export class TaskQueue {
   }
 
   enqueue(task: Task) {
-    this.items.push(task);
+    // Only enqueue if type is "task"
+    if (task.type === "TASKS") {
+      this.items.push(task);
+    }
   }
 
   dequeue(): Task | undefined {
@@ -91,10 +94,12 @@ const TaskTable: React.FC<TaskTableProps> = ({
   updateAction,
   deleteAction,
 }) => {
-  // Initialize TaskQueue
+  // Initialize TaskQueue with only tasks of type "task"
   const [taskQueue] = useState(() => {
     const queue = new TaskQueue();
-    initialTasks.forEach((task) => queue.enqueue(task));
+    initialTasks
+      .filter((task) => task.type === "TASKS")
+      .forEach((task) => queue.enqueue(task));
     return queue;
   });
 
@@ -147,24 +152,37 @@ const TaskTable: React.FC<TaskTableProps> = ({
       status: formData.get("status") as string,
       type: formData.get("type") as string,
     };
-    taskQueue.updateTask(taskId, updatedTask);
-    setTasks(taskQueue.getAllTasks());
+
+    // Only update if type is still "task"
+    if (updatedTask.type === "TASKS") {
+      taskQueue.updateTask(taskId, updatedTask);
+      setTasks(taskQueue.getAllTasks());
+    } else {
+      // Remove from queue if type is changed to something else
+      taskQueue.removeById(taskId);
+      setTasks(taskQueue.getAllTasks());
+    }
   };
 
   const handleAddTask = async (formData: FormData) => {
     await addAction(formData);
-    const newTask: Task = {
-      id: Math.random().toString(36).substr(2, 9),
-      content: formData.get("content") as string,
-      status: formData.get("status") as string,
-      type: formData.get("type") as string,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      userId: "default-user", // Replace with actual user ID from your auth system
-      userName: "Default User", // Replace with actual user name from your auth system
-    };
-    taskQueue.enqueue(newTask);
-    setTasks(taskQueue.getAllTasks());
+    const taskType = formData.get("type") as string;
+
+    // Only add if type is "task"
+    if (taskType === "TASKS") {
+      const newTask: Task = {
+        id: Math.random().toString(36).substr(2, 9),
+        content: formData.get("content") as string,
+        status: formData.get("status") as string,
+        type: taskType,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: "default-user",
+        userName: "Default User",
+      };
+      taskQueue.enqueue(newTask);
+      setTasks(taskQueue.getAllTasks());
+    }
   };
 
   return (

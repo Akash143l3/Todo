@@ -2,15 +2,15 @@ import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Define your enum for TodoStatus
 export enum TodoStatus {
-  Pending = 'pending',
-  InProgress = 'in progress',
-  Done = 'done',
+  Pending = "PENDING",
+  InProgress = "IN_PROGRESS",
+  Done = "DONE",
 }
 
 // Define your enum for TaskType
 export enum TaskType {
-  Backlog = 'backlog',
-  Tasks = 'tasks',
+  Backlog = "BACKLOG",
+  Tasks = "TASKS",
 }
 
 // Define your table

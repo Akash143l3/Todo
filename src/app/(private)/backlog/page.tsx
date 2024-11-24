@@ -32,7 +32,7 @@ export default async function BackLog() {
     const userName = user?.firstName + " " + user?.lastName;
 
     const type =
-      formData.get("type") === "backlog" ? TaskType.Tasks : TaskType.Backlog;
+      formData.get("type") === "BACKLOG" ? TaskType.Tasks : TaskType.Backlog;
 
     if (!content) throw Error("Content must be there...");
 
@@ -48,7 +48,7 @@ export default async function BackLog() {
     const content = formData.get("content")?.toString();
     const status = formData.get("status")?.toString() as TodoStatus;
     const type =
-      formData.get("type") === "backlog" ? TaskType.Backlog : TaskType.Tasks;
+      formData.get("type") === "BACKLOG" ? TaskType.Backlog : TaskType.Tasks;
 
     await db
       .update(tasks)

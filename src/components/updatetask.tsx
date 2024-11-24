@@ -88,7 +88,7 @@ export default function UpdateTaskForm({
                     type="radio"
                     id="backlog"
                     name="type"
-                    value="backlog"
+                    value="BACKLOG"
                     defaultChecked={task.type === TaskType.Backlog}
                     required
                   />
