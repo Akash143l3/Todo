@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useTransition } from "react";
-import { Search, MoreVertical, Loader2, Clock } from "lucide-react";
+import { Search, MoreVertical, Loader2, Clock, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,6 +14,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -26,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { TaskForm } from "./TaskForm";
 
 export interface Task {
+  isDeleting: boolean;
   id: string;
   content: string;
   status: string;
@@ -37,16 +40,15 @@ export interface Task {
 }
 
 export class TaskQueue {
-  private items: Task[];
+  items: Task[];
 
   constructor() {
     this.items = [];
   }
 
   enqueue(task: Task) {
-    // Only enqueue if type is "task"
     if (task.type === "TASKS") {
-      this.items.push(task);
+      this.items.unshift(task); // Add to the beginning
     }
   }
 
@@ -94,7 +96,6 @@ const TaskTable: React.FC<TaskTableProps> = ({
   updateAction,
   deleteAction,
 }) => {
-  // Initialize TaskQueue with only tasks of type "task"
   const [taskQueue] = useState(() => {
     const queue = new TaskQueue();
     initialTasks
@@ -108,10 +109,12 @@ const TaskTable: React.FC<TaskTableProps> = ({
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [showQueueInfo, setShowQueueInfo] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDequeueDialogOpen, setIsDequeueDialogOpen] = useState(false);
+  const [dequeuedTask, setDequeuedTask] = useState<Task | null>(null);
+  const [isDequeuing, setIsDequeuing] = useState(false);
 
   const filteredTasks = tasks.filter(
     (task) =>
@@ -120,22 +123,39 @@ const TaskTable: React.FC<TaskTableProps> = ({
       !selectedTasks.has(task.id)
   );
 
+  const fetchTasks = async (): Promise<Task[]> => {
+    const response = await fetch("/api/tasks");
+    if (!response.ok) {
+      throw new Error("Failed to fetch tasks");
+    }
+    return response.json();
+  };
+
+  const refreshQueue = (newTasks: Task[]) => {
+    taskQueue.items = []; // Clear existing queue
+    newTasks
+      .filter((task) => task.type === "TASKS")
+      .forEach((task) => taskQueue.enqueue(task)); // Refill queue with updated tasks
+  };
+
   const handleDelete = async (taskId: string) => {
-    setDeletingTaskId(taskId);
     startTransition(async () => {
       try {
+        // Mark the task as deleting
+        const updatedTasks = tasks.map((t) =>
+          t.id === taskId ? { ...t, isDeleting: true } : t
+        );
+        setTasks(updatedTasks);
+
         await deleteAction(taskId);
-        taskQueue.removeById(taskId);
+
+        const fetchedTasks = await fetchTasks();
+        refreshQueue(fetchedTasks);
         setTasks(taskQueue.getAllTasks());
-        setSelectedTasks((prev) => {
-          const newSelectedTasks = new Set(prev);
-          newSelectedTasks.delete(taskId);
-          return newSelectedTasks;
-        });
       } catch (error) {
         console.error("Error deleting task:", error);
-      } finally {
-        setDeletingTaskId(null);
+        // Revert tasks to original state if deletion fails
+        setTasks(taskQueue.getAllTasks());
       }
     });
   };
@@ -153,12 +173,10 @@ const TaskTable: React.FC<TaskTableProps> = ({
       type: formData.get("type") as string,
     };
 
-    // Only update if type is still "task"
     if (updatedTask.type === "TASKS") {
       taskQueue.updateTask(taskId, updatedTask);
       setTasks(taskQueue.getAllTasks());
     } else {
-      // Remove from queue if type is changed to something else
       taskQueue.removeById(taskId);
       setTasks(taskQueue.getAllTasks());
     }
@@ -168,7 +186,6 @@ const TaskTable: React.FC<TaskTableProps> = ({
     await addAction(formData);
     const taskType = formData.get("type") as string;
 
-    // Only add if type is "task"
     if (taskType === "TASKS") {
       const newTask: Task = {
         id: Math.random().toString(36).substr(2, 9),
@@ -179,9 +196,36 @@ const TaskTable: React.FC<TaskTableProps> = ({
         updatedAt: new Date(),
         userId: "default-user",
         userName: "Default User",
+        isDeleting: false,
       };
       taskQueue.enqueue(newTask);
       setTasks(taskQueue.getAllTasks());
+      setIsAddDialogOpen(false);
+    }
+  };
+
+  const handleDequeue = () => {
+    const nextTask = taskQueue.peek();
+    if (nextTask) {
+      setDequeuedTask(nextTask);
+      setIsDequeueDialogOpen(true);
+    }
+  };
+
+  const confirmDequeue = async () => {
+    if (dequeuedTask) {
+      try {
+        setIsDequeuing(true);
+        await deleteAction(dequeuedTask.id);
+        taskQueue.dequeue();
+        setTasks(taskQueue.getAllTasks());
+        setIsDequeueDialogOpen(false);
+        setDequeuedTask(null);
+      } catch (error) {
+        console.error("Error dequeuing task:", error);
+      } finally {
+        setIsDequeuing(false);
+      }
     }
   };
 
@@ -207,6 +251,20 @@ const TaskTable: React.FC<TaskTableProps> = ({
             Queue Info
           </Button>
           <Button onClick={() => setIsAddDialogOpen(true)}>Add New Task</Button>
+          <Button
+            variant="destructive"
+            onClick={handleDequeue}
+            disabled={taskQueue.isEmpty() || isDequeuing}
+          >
+            {isDequeuing ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Dequeuing...
+              </div>
+            ) : (
+              "Dequeue Task"
+            )}
+          </Button>
         </div>
 
         {showQueueInfo && (
@@ -239,7 +297,15 @@ const TaskTable: React.FC<TaskTableProps> = ({
                   <TableCell className="font-medium">
                     TASK-{task.id.slice(0, 4)}
                   </TableCell>
-                  <TableCell>{task.content}</TableCell>
+                  <TableCell>
+                    {task.isDeleting ? (
+                      <span className="flex items-center gap-2 text-gray-500">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Deleting...
+                      </span>
+                    ) : (
+                      task.content
+                    )}
+                  </TableCell>
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-sm ${
@@ -269,6 +335,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
                             event.preventDefault();
                             handleEditClick(task);
                           }}
+                          disabled={task.isDeleting}
                         >
                           Edit
                         </DropdownMenuItem>
@@ -277,9 +344,9 @@ const TaskTable: React.FC<TaskTableProps> = ({
                             event.preventDefault();
                             handleDelete(task.id);
                           }}
-                          disabled={deletingTaskId === task.id}
+                          disabled={task.isDeleting}
                         >
-                          {deletingTaskId === task.id ? (
+                          {task.isDeleting ? (
                             <div className="flex items-center gap-2">
                               <Loader2 className="h-4 w-4 animate-spin" />
                               Deleting...
@@ -341,6 +408,56 @@ const TaskTable: React.FC<TaskTableProps> = ({
               action={handleAddTask}
               onClose={() => setIsAddDialogOpen(false)}
             />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={isDequeueDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsDequeueDialogOpen(false);
+              setDequeuedTask(null);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Dequeue Task</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to remove the next task from the queue?
+              </DialogDescription>
+            </DialogHeader>
+            {dequeuedTask && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="font-medium">Task Details:</p>
+                <p>ID: TASK-{dequeuedTask.id.slice(0, 4)}</p>
+                <p>Content: {dequeuedTask.content}</p>
+                <p>Status: {dequeuedTask.status}</p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDequeueDialogOpen(false)}
+                disabled={isDequeuing}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDequeue}
+                disabled={isDequeuing}
+              >
+                {isDequeuing ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Dequeuing...
+                  </div>
+                ) : (
+                  "Confirm Dequeue"
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
