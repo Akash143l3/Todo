@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { TaskForm } from "./TaskForm";
 
 export interface Task {
-  isDeleting: boolean;
+  isDeleting?: boolean;
   id: string;
   content: string;
   status: string;
